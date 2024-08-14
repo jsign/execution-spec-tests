@@ -111,6 +111,44 @@ def test_full_contract(
     _state_conversion(blockchain_test, pre_state, stride, num_expected_blocks)
 
 
+@pytest.mark.valid_from("Verkle")
+@pytest.mark.parametrize(
+    "fcb, stride, num_expected_blocks",
+    [
+        (True, 1, 2),
+        (True, 2, 1),
+        (False, 1, 1),
+        (False, 2, 1),
+    ],
+)
+def test_empty_account(
+    blockchain_test: BlockchainTestFiller,
+    fcb: bool,
+    stride: int,
+    num_expected_blocks: int,
+):
+    """
+    Test EIP-161 accounts.
+    """
+    if fcb:
+        pre_state = {}
+    else:
+        pre_state = {
+            Account0: Account(balance=1000),
+        }
+
+    # Empty account (EIP-161)
+    pre_state[Account1] = Account(
+        balance=0,
+        nonce=0,
+        storage={0: 0x1, 1: 0x2},
+    )
+
+    pre_state[Account2] = Account(balance=1001)
+
+    _state_conversion(blockchain_test, pre_state, stride, num_expected_blocks)
+
+
 def _state_conversion(
     blockchain_test: BlockchainTestFiller,
     pre_state: dict[Address, Account],
