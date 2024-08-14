@@ -33,8 +33,15 @@ Account4 = Address("0xd94f5374fce5edbc8e2a8697c15331677e6ebf0f")
 
 
 @pytest.mark.valid_from("Verkle")
-@pytest.mark.parametrize("stride", [1, 2, 3])
-def test_eoa(blockchain_test: BlockchainTestFiller, stride: int):
+@pytest.mark.parametrize(
+    "stride, num_expected_blocks",
+    [
+        (1, 3),
+        (2, 2),
+        (3, 1),
+    ],
+)
+def test_eoa(blockchain_test: BlockchainTestFiller, stride: int, num_expected_blocks: int):
     """
     Test only EOA account conversion.
     """
@@ -43,7 +50,7 @@ def test_eoa(blockchain_test: BlockchainTestFiller, stride: int):
         Account1: Account(balance=2000),
         Account2: Account(balance=3000),
     }
-    _state_conversion(blockchain_test, pre_state, stride)
+    _state_conversion(blockchain_test, pre_state, stride, num_expected_blocks)
 
 
 @pytest.mark.valid_from("Verkle")
@@ -62,18 +69,31 @@ def test_eoa(blockchain_test: BlockchainTestFiller, stride: int):
         "bigger_than_header",
     ],
 )
-@pytest.mark.parametrize("convert_in_first_block", [True, False])
-@pytest.mark.parametrize("stride", [1, 2, 3])
+@pytest.mark.parametrize(
+    "fcb, stride, num_expected_blocks",
+    [
+        (True, 1, 6),
+        (True, 2, 3),
+        (True, 3, 2),
+        (True, 4, 2),
+        (True, 5, 2),
+        (True, 6, 1),
+        (False, 1, 3),
+        (False, 2, 2),
+        (False, 3, 1),
+    ],
+)
 def test_full_contract(
     blockchain_test: BlockchainTestFiller,
     contract_length: int,
-    convert_in_first_block: int,
+    fcb: bool,
     stride: int,
+    num_expected_blocks: int,
 ):
     """
     Test contract account full/partial migration cases.
     """
-    if convert_in_first_block:
+    if fcb:
         pre_state = {}
     else:
         pre_state = {
@@ -88,11 +108,14 @@ def test_full_contract(
         storage={0: 0x1, 1: 0x2},
     )
 
-    _state_conversion(blockchain_test, pre_state, stride)
+    _state_conversion(blockchain_test, pre_state, stride, num_expected_blocks)
 
 
 def _state_conversion(
-    blockchain_test: BlockchainTestFiller, pre_state: dict[Address, Account], stride: int
+    blockchain_test: BlockchainTestFiller,
+    pre_state: dict[Address, Account],
+    stride: int,
+    num_expected_blocks: int,
 ):
     env = Environment(
         fee_recipient="0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
@@ -105,8 +128,8 @@ def _state_conversion(
     # - vkt pre-state to test stale-values
     # - reorg support
     # - witness assertion
-    # - assert conversion finished
 
+    # TODO: gen num_expected_blocks and check last is exactly the one where conversion ended.
     blocks = [Block(txs=[])]
 
     blockchain_test(
