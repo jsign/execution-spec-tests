@@ -55,21 +55,22 @@ def test_eoa(blockchain_test: BlockchainTestFiller, stride: int):
         130 * 31,
     ],
     ids=[
-        "all_in_header",
+        "in_header",
         "header_perfect_fit",
         "bigger_than_header",
     ],
 )
 @pytest.mark.parametrize("convert_in_first_block", [True, False])
+@pytest.mark.parametrize("stride", [1, 2, 3])
 def test_full_contract(
-    blockchain_test: BlockchainTestFiller, contract_length: int, convert_in_first_block: int
+    blockchain_test: BlockchainTestFiller,
+    contract_length: int,
+    convert_in_first_block: int,
+    stride: int,
 ):
     """
-    Test full contract conversion in a single block.
+    Test contract account full/partial migration cases.
     """
-    # The smart-contract account needs 3 conversion units to be migrated in one block.
-    stride = 3
-
     if convert_in_first_block:
         pre_state = {}
     else:
