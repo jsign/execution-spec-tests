@@ -14,6 +14,7 @@ from ethereum_test_tools import (
     BlockchainTestFiller,
     Environment,
 )
+from ethereum_test_tools.vm.opcode import Opcodes as Op
 
 REFERENCE_SPEC_GIT_PATH = "EIPS/eip-7748.md"
 REFERENCE_SPEC_VERSION = "TODO"
@@ -45,6 +46,48 @@ def test_eoa(blockchain_test: BlockchainTestFiller, stride: int):
     _state_conversion(blockchain_test, pre_state, stride)
 
 
+@pytest.mark.valid_from("Verkle")
+@pytest.mark.parametrize(
+    "contract_length",
+    [
+        1,
+        128 * 31,
+        130 * 31,
+    ],
+    ids=[
+        "all_in_header",
+        "header_perfect_fit",
+        "bigger_than_header",
+    ],
+)
+@pytest.mark.parametrize("convert_in_first_block", [True, False])
+def test_full_contract(
+    blockchain_test: BlockchainTestFiller, contract_length: int, convert_in_first_block: int
+):
+    """
+    Test full contract conversion in a single block.
+    """
+    # The smart-contract account needs 3 conversion units to be migrated in one block.
+    stride = 3
+
+    if convert_in_first_block:
+        pre_state = {}
+    else:
+        pre_state = {
+            Account0: Account(balance=1000),
+            Account1: Account(balance=1001),
+            Account2: Account(balance=1002),
+        }
+
+    pre_state[Account3] = Account(
+        balance=2000,
+        code=Op.STOP * contract_length,
+        storage={0: 0x1, 1: 0x2},
+    )
+
+    _state_conversion(blockchain_test, pre_state, stride)
+
+
 def _state_conversion(
     blockchain_test: BlockchainTestFiller, pre_state: dict[Address, Account], stride: int
 ):
@@ -59,6 +102,7 @@ def _state_conversion(
     # - vkt pre-state to test stale-values
     # - reorg support
     # - witness assertion
+    # - assert conversion finished
 
     blocks = [Block(txs=[])]
 
