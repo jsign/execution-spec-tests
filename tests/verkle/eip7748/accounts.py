@@ -50,11 +50,13 @@ def test_eoa(blockchain_test: BlockchainTestFiller, stride: int):
 @pytest.mark.parametrize(
     "contract_length",
     [
+        0,
         1,
         128 * 31,
         130 * 31,
     ],
     ids=[
+        "empty",
         "in_header",
         "header_perfect_fit",
         "bigger_than_header",
